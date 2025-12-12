@@ -1,0 +1,90 @@
+// server.js
+console.log('SERVER STARTED!');
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const connectDB = require('./config/db');
+require('dotenv').config();
+const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
+const bcrypt = require('bcryptjs');
+
+// Import routes
+const adminRoutes = require('./routes/admin');
+const leagueRoutes = require('./routes/league');
+const applicationsByDateRoutes = require('./routes/applicationsByDateRoutes');
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const otpRoutes = require('./routes/otpRoutes');
+const videoRoutes = require('./routes/videoRoutes');
+const learningPhaseRoutes = require('./routes/learningPhaseRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+
+// Import Admin model
+const Admin = require('./models/Admin');
+
+const app = express();
+connectDB();
+
+// ✅ CORS Middleware (allow Vercel and localhost origins only)
+app.use(cors({
+  origin: [
+    'https://pro-chartist-yjn8.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5174'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Middleware
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ limit: '200mb', extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Log every incoming request
+app.use((req, res, next) => {
+  console.log('Incoming request:', req.method, req.url);
+  next();
+});
+
+// ✅ Multer setup for image uploads
+// (Removed unused local disk Multer storage)
+
+// ✅ Routes
+app.use('/api/admin', adminRoutes);
+app.use('/api/league', leagueRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api', otpRoutes);
+app.use('/api/applicationsByDate', applicationsByDateRoutes);
+app.use('/api/videos', videoRoutes);
+app.use('/api/learning-phases', learningPhaseRoutes);
+app.use('/api/payments', paymentRoutes);
+
+// ✅ Create default admin if not exists
+const createDefaultAdmin = async () => {
+  try {
+    const existing = await Admin.findOne({ email: 'admin@example.com' });
+    if (!existing) {
+      const hashed = await bcrypt.hash('Admin@123', 10);
+      await Admin.create({ email: 'admin@example.com', password: hashed, role: 'admin' });
+      console.log('✅ Default admin created');
+    }
+  } catch (err) {
+    console.error('❌ Error creating default admin:', err);
+  }
+};
+
+createDefaultAdmin();
+
+// Root route
+app.get('/', (req, res) => {
+  res.send('✅ API is working');
+});
+
+// Start server
+const PORT = process.env.PORT || 5002;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

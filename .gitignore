@@ -1,0 +1,23 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+
+# Common large file types
+*.zip
+*.mp4
+*.psd
+*.sqlite
+
+# Ignore uploaded files
+ShraddhaBackend/uploads/
+
+# Environment files
+.env
